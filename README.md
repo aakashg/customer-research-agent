@@ -1,6 +1,6 @@
 # Cadence: a two-way email campaign run by Claude Code
 
-> Built by [Greg Greiner](https://www.linkedin.com/in/greggreiner1/), CEO of [Woven](https://woven.ai/), for [The Growth Podcast](https://youtu.be/JpyhPePe150) with Aakash Gupta. Watch him build it and add the eval loop live in the episode.
+> Built by [Greg Greiner](https://www.linkedin.com/in/greggreiner1/), CEO of [Woven](https://woven.ai/), for [The Growth Podcast](https://www.youtube.com/@growproduct) with [Aakash Gupta](https://www.news.aakashg.com). Watch him build it and add the eval loop live in [the episode](https://youtu.be/JpyhPePe150).
 
 A working example of an AI agent running a real customer conversation, not just a mail merge. It sends a personalized check-in, reads each reply, decides what to do, answers within company policy, hands sensitive cases to a human, and turns all of it into a research report.
 
