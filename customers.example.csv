@@ -1,0 +1,21 @@
+first_name,email,program,signup_date,workouts_completed,segment,send
+Jordan,jordan@example.com,HIIT Express,2026-08-23,5,trial_engaged,yes
+Riley,riley@example.com,Mobility Daily,2026-08-22,0,trial_dormant,yes
+Casey,casey@example.com,5K Builder,2026-08-24,0,trial_dormant,no
+Morgan,morgan@example.com,Strength Foundations,2026-08-23,6,trial_engaged,no
+Avery,avery@example.com,HIIT Express,2026-08-22,3,trial_light,no
+Taylor,taylor@example.com,Strength Foundations,2026-08-23,0,trial_dormant,no
+Jamie,jamie@example.com,5K Builder,2026-08-22,1,trial_light,no
+Drew,drew@example.com,Mobility Daily,2026-08-24,0,trial_dormant,no
+Skyler,skyler@example.com,HIIT Express,2026-08-23,4,trial_engaged,no
+Reese,reese@example.com,Strength Foundations,2026-08-22,2,trial_light,no
+Quinn,quinn@example.com,5K Builder,2026-08-23,0,trial_dormant,no
+Rowan,rowan@example.com,Mobility Daily,2026-08-24,8,trial_engaged,no
+Emerson,emerson@example.com,HIIT Express,2026-08-22,1,trial_light,no
+Finley,finley@example.com,Strength Foundations,2026-08-23,0,trial_dormant,no
+Sawyer,sawyer@example.com,5K Builder,2026-08-24,3,trial_light,no
+Kendall,kendall@example.com,Mobility Daily,2026-08-22,0,trial_dormant,no
+Blake,blake@example.com,HIIT Express,2026-08-23,5,trial_engaged,no
+Peyton,peyton@example.com,Strength Foundations,2026-08-24,1,trial_light,no
+Hayden,hayden@example.com,5K Builder,2026-08-22,0,trial_dormant,no
+Charlie,charlie@example.com,Mobility Daily,2026-08-23,2,trial_light,no

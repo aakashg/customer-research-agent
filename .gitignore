@@ -1,0 +1,16 @@
+# Local configuration and customer data (copy from the *.example files)
+config/campaign.json
+customers.csv
+customers.seed.csv
+.env
+
+# Runtime state
+conversations/*
+!conversations/.gitkeep
+reports/*
+!reports/.gitkeep
+logs/
+
+# Machine-specific
+.claude/settings.local.json
+.DS_Store
