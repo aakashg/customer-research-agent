@@ -1,9 +1,9 @@
 first_name,email,program,signup_date,workouts_completed,segment,send
 Jordan,jordan@example.com,HIIT Express,2026-08-23,5,trial_engaged,yes
 Riley,riley@example.com,Mobility Daily,2026-08-22,0,trial_dormant,yes
-Casey,casey@example.com,5K Builder,2026-08-24,0,trial_dormant,no
+Casey,casey@example.com,5K Builder,2026-08-24,0,trial_dormant,yes
 Morgan,morgan@example.com,Strength Foundations,2026-08-23,6,trial_engaged,no
-Avery,avery@example.com,HIIT Express,2026-08-22,3,trial_light,no
+Avery,avery@example.com,HIIT Express,2026-08-22,3,trial_light,yes
 Taylor,taylor@example.com,Strength Foundations,2026-08-23,0,trial_dormant,no
 Jamie,jamie@example.com,5K Builder,2026-08-22,1,trial_light,no
 Drew,drew@example.com,Mobility Daily,2026-08-24,0,trial_dormant,no

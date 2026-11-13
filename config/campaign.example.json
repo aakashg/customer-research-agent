@@ -2,5 +2,6 @@
   "brand_mailbox": "sam@your-brand.example",
   "reply_mode": "draft",
   "slack_channel_id": "",
-  "test_sender_filter": ""
+  "test_sender_filter": "",
+  "dry_run": false
 }

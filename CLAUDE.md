@@ -30,10 +30,12 @@ Send every message (initial outreach, replies, drafts) with `body_format: "html"
 - Injury, pain, medical condition → no training advice. Reply once acknowledging it, then log the thread to `conversations/ESCALATE-{email}.md`.
 - Anger, refund request, "talk to a human" → same escalation.
 - Unsubscribe request → honor immediately, set `send=no` in the CSV.
+- Dry run (`DRY_RUN=1`, or `"dry_run": true` in the config): never call a Gmail or Slack tool. Emails go to `outbox/`, drafts to `outbox/drafts/`, and replies come from `sample-replies/`.
+- Nothing goes out automatically until the groundedness eval in `evals/groundedness.md` passes. A failed email is regenerated once and saved as a draft.
 
 ## Logging
 
-Append every message (sent or received) to `conversations/{email}.md`: timestamp, direction (OUT/IN), sentiment (positive/neutral/negative), one-line extraction of any answer to the three questions above.
+Append every message (sent or received) to `conversations/{email}.md`: timestamp, direction (OUT/IN), sentiment (positive/neutral/negative), one-line extraction of any answer to the three questions above. For outbound messages, add the groundedness eval outcome. For inbound messages, also keep the customer's words verbatim as a blockquote under the entry: the insights report quotes customers, and the log is the only place it can read their words.
 
 ## Reports
 

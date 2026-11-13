@@ -1,13 +1,36 @@
 ---
-description: Check the connected Gmail inbox for new replies to the day-10 trial campaign and act on each per CLAUDE.md.
+description: Check the connected Gmail inbox (or sample-replies/ with DRY_RUN=1) for new replies to the day-10 trial campaign and act on each per CLAUDE.md.
+allowed-tools: Bash(printenv:*), Bash(echo:*)
 ---
 
 Run this every time you're invoked, whether interactively or from the scheduled poller (`scripts/poll.sh`). It should be a no-op if there's nothing new — don't ask the user anything, don't wait for input, just do the work and report a short summary at the end.
 
+## Mode: live or dry run
+
+Value of the `DRY_RUN` environment variable (`1` means dry run, `0` means not set): !`printenv DRY_RUN || echo 0`
+
+This is a **dry run** if the value above is `1`, or if `config/campaign.json` has `"dry_run": true`. Otherwise it is live. If it is not a dry run and `config/campaign.json` doesn't exist, stop and tell the user to either run with `DRY_RUN=1` or finish the Setup steps in the README.
+
+In a dry run nothing touches Gmail or Slack. Never call any Gmail or Slack tool, and never use an address that isn't in `customers.csv`. Everywhere below that names a Gmail or Slack tool, do this instead:
+
+| Live | Dry run |
+|---|---|
+| Search Gmail for unread mail, fetch each message and its thread | Glob `sample-replies/*.md`. Each file is one inbound email: front matter with `from` and `received`, then the body. A file is unread if its name isn't listed in `conversations/.dry-run-processed.txt`. Process oldest `received` first. Ignore `test_sender_filter`. |
+| Thread-origin check (step 1) | The outbound origin is the outreach file `outbox/{email}-01.md` (or `outbox/drafts/{email}-01.md`) whose `to:` is the reply's `from`. No such file means the reply isn't a campaign reply: skip it and don't mark it processed. |
+| `Cadence/Processed` label | Append the reply's file name to `conversations/.dry-run-processed.txt`. |
+| `send_gmail_message` | Write `outbox/{email}-{NN}.md` with `status: sent` (`NN` is the next unused number for that address). |
+| `draft_gmail_message` | Write `outbox/drafts/{email}-{NN}.md` with `status: draft` and a `reason:` line (`escalation`, `eval-failed` or `reply-mode-draft`). |
+| `slack_send_message` | Append the same message to `outbox/slack-notifications.md`. Put the draft's file path where the Gmail thread link would go. |
+| `in_reply_to`, `thread_id` | Front matter `in_reply_to:` holding the file name of the message being answered. |
+
+Outbox file format: front matter with `to`, `from` (`Sam from Cadence <brand_mailbox>`), `subject` (`Re:` the original), `kind` (`reply`, `escalation` or `unsubscribe-confirmation`), `status`, `in_reply_to`, `eval` (`PASS`, `FAIL, regenerated` or `skipped`), then the body as plain readable paragraphs. No HTML in these files. Every other rule, including the voice rules and the escalation overrides, still applies. Get timestamps from the `date` command.
+
+Dry-run defaults: if `config/campaign.json` doesn't exist, read `config/campaign.example.json` and treat `reply_mode` as `"auto-send"` (nothing leaves your machine, and auto-send is the path that runs the groundedness eval). If `customers.csv` doesn't exist, create it as a copy of `customers.example.csv`. Unsubscribes still edit `customers.csv` and conversation logs are still written, because those are local files.
+
 ## 0. Load context
 Read, in this order: `CLAUDE.md`, `company/programs.md`, `company/policies.md`, `company/escalation-playbook.md`, `config/campaign.json`, `customers.csv`.
 
-`config/campaign.json` holds four settings:
+`config/campaign.json` holds five settings (the fifth, `dry_run`, is covered above):
 
 - `brand_mailbox`: the authorized Cadence mailbox. Every Gmail MCP tool call in this command passes it as `user_google_email`. Never substitute another address.
 - `reply_mode`: `"draft"` or `"auto-send"`. Controls normal replies only. See step 2d for the escalation override, which ignores this setting.
@@ -36,7 +59,7 @@ Do these one at a time, oldest first. For each:
    3. Unsubscribe request
    4. None of the above — a normal reply
 
-**c. Log the inbound.** Append to `conversations/{email}.md`: timestamp, `IN`, sentiment, and a one-line extraction of any answer to the three campaign questions (what they hoped would be different, what got in the way, whether the level feels right) if present in the message.
+**c. Log the inbound.** Append to `conversations/{email}.md`: timestamp, `IN`, sentiment, and a one-line extraction of any answer to the three campaign questions (what they hoped would be different, what got in the way, whether the level feels right) if present in the message. Under the entry, keep the customer's message verbatim as a blockquote, so the insights report can quote them.
 
 **d. Branch on classification, per `company/escalation-playbook.md`:**
 
@@ -55,18 +78,12 @@ Every `draft_gmail_message`/`send_gmail_message` call in this step uses `body_fo
 
 - **Normal reply:** Compose a reply that acknowledges what they said, naturally works in whichever of the three campaign questions hasn't been answered yet (don't re-ask an already-answered one), and applies the offer logic from `CLAUDE.md` based on their segment/workout count — but don't repeat an offer already made and not yet acted on unless they're asking about it. Pull factual details (program specifics, extension/annual-plan mechanics) from `company/programs.md` and `company/policies.md` rather than improvising. Match voice: encouraging, no exclamation marks, no em dashes, short paragraphs, sign off "Sam from Cadence." Don't state their `workouts_completed` number back to them — it's for picking tone/offer only, not for the copy.
 
-  **If `reply_mode` is `"auto-send"`, run the groundedness eval below on the generated reply before sending.** (`"draft"`-mode replies skip the eval — a human reviews those before anything goes out.)
-
-  **Groundedness eval (auto-send only).** Check the generated reply against `company/programs.md`, `company/policies.md`, and `CLAUDE.md`'s offer logic. Fail the eval if any of the following is true:
-  - It states a program detail (session length, cadence, equipment, level range) not supported by `company/programs.md`, or contradicts it.
-  - It states a policy/offer mechanic (annual-plan discount, trial extension terms, cancellation, refunds) not supported by `company/policies.md`, or invents a number/percentage/date not present there.
-  - It offers a second trial extension to a customer whose `conversations/{email}.md` shows one already granted, or stacks the annual discount with anything else, or offers a discount outside the annual plan.
-  - It states the customer's `workouts_completed` number back to them, or mentions a competitor.
+  **If `reply_mode` is `"auto-send"`, run the groundedness eval on the generated reply before sending.** The procedure, the rubric and the judge are in `evals/groundedness.md` (the `groundedness-judge` subagent checks every claim against `company/programs.md`, `company/policies.md` and `CLAUDE.md`'s offer logic). Replies in `"draft"` mode skip the eval because a human reviews those before anything goes out. Escalation drafts skip it for the same reason.
 
   If the eval passes, proceed to send. If it fails:
-  1. Regenerate the reply once, correcting the specific issue the eval found. Don't retry more than once — if the regenerated reply still fails, draft it anyway and flag the eval failure in the log and Slack post for human judgment.
-  2. Save the regenerated reply as a Gmail draft (`draft_gmail_message`) instead of sending, even though `reply_mode` is `"auto-send"`.
-  3. Log the `OUT` entry noting the eval failure (what was ungrounded), that it was regenerated, and that it's now a draft awaiting review.
+  1. Rerun the whole generation for this reply, not a patch: go back to composing the normal reply at the top of this branch with the judge's findings added as extra input. Don't edit the failing sentence in place, and don't retry more than once. Judge the new version too. If it still fails, draft it anyway and flag the eval failure in the log and Slack post for human judgment.
+  2. Save the regenerated reply as a draft (`draft_gmail_message`) instead of sending, even though `reply_mode` is `"auto-send"`.
+  3. Log the `OUT` entry noting the eval failure (what was ungrounded), that it was regenerated, the second verdict, and that it's now a draft awaiting review.
 
   Then act per `reply_mode` (subject to the eval override above):
   - `"draft"` → `draft_gmail_message`, threaded via `thread_id`/`in_reply_to`.
@@ -93,4 +110,4 @@ If the Slack post fails, don't block on it — note the failure in the step 3 re
 **f. Mark it processed.** Apply the `Cadence/Processed` label to the inbound message via `modify_gmail_message_labels` so it's never re-processed.
 
 ## 3. Report
-End with a short summary: how many messages found, how many normal replies vs escalations vs unsubscribes, reply_mode used, how many auto-send replies were downgraded to a draft after failing the groundedness eval, and how many Slack notifications posted vs failed. If anything is sitting as an escalation draft or an eval-downgraded draft, call that out explicitly since those need a human to actually send them.
+End with a short summary: how many messages found, how many normal replies vs escalations vs unsubscribes, reply_mode used, how many auto-send replies were downgraded to a draft after failing the groundedness eval, and how many Slack notifications posted vs failed. If anything is sitting as an escalation draft or an eval-downgraded draft, call that out explicitly since those need a human to actually send them. In a dry run, say so and list the files written under `outbox/` and `outbox/drafts/`.
