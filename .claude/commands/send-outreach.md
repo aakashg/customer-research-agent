@@ -48,12 +48,12 @@ Pull `first_name`, `program`, `workouts_completed`, and `segment` from their `cu
 - Match voice exactly per `CLAUDE.md`: encouraging, no exclamation marks, no em dashes, short paragraphs, sign off "Sam from Cadence."
 - Live runs: use `body_format: "html"` (never `"plain"`) per `CLAUDE.md`'s Email format section — one `<div>` per paragraph, `<div><br></div>` between them, no manual line wrapping, no other styling or markup.
 
-## 3. Groundedness eval
+## 3. Groundedness and permissions evals
 
-Initial outreach goes out automatically, so every composed email is checked before anything is sent. Run the eval in `evals/groundedness.md` on each one (the `groundedness-judge` subagent).
+Initial outreach goes out automatically, so every composed email is checked before anything is sent. Run both evals on each one, in parallel: `evals/groundedness.md` (the `groundedness-judge` subagent: is every claim true?) and `evals/permissions.md` (the `permissions-judge` subagent: was every action allowed?). It passes only if both pass.
 
 - **Pass:** go to step 4 and send it.
-- **Fail:** don't send. Rerun the whole composition in step 2 for that customer with the judge's findings as extra input (not a patch to the failing sentence), judge the new version, and save it as a draft for review instead of sending it. Live: `draft_gmail_message`. Dry run: `outbox/drafts/`.
+- **Fail:** don't send. Rerun the whole composition in step 2 for that customer with both judges' findings as extra input (not a patch to the failing sentence), judge the new version, and save it as a draft for review instead of sending it. Live: `draft_gmail_message`. Dry run: `outbox/drafts/`.
 
 ## 4. Send
 

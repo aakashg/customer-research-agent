@@ -80,6 +80,8 @@ Every `draft_gmail_message`/`send_gmail_message` call in this step uses `body_fo
 
   **If `reply_mode` is `"auto-send"`, run the groundedness eval on the generated reply before sending.** The procedure, the rubric and the judge are in `evals/groundedness.md` (the `groundedness-judge` subagent checks every claim against `company/programs.md`, `company/policies.md` and `CLAUDE.md`'s offer logic). Replies in `"draft"` mode skip the eval because a human reviews those before anything goes out. Escalation drafts skip it for the same reason.
 
+  Run the permissions eval at the same time: `evals/permissions.md` (the `permissions-judge` subagent lists every action the reply takes or promises and links each one to the instruction that allows it). Treat the reply as passing only if both judges pass, and feed both FAILURES lists into the regeneration below.
+
   If the eval passes, proceed to send. If it fails:
   1. Rerun the whole generation for this reply, not a patch: go back to composing the normal reply at the top of this branch with the judge's findings added as extra input. Don't edit the failing sentence in place, and don't retry more than once. Judge the new version too. If it still fails, draft it anyway and flag the eval failure in the log and Slack post for human judgment.
   2. Save the regenerated reply as a draft (`draft_gmail_message`) instead of sending, even though `reply_mode` is `"auto-send"`.

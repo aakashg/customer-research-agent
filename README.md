@@ -2,7 +2,7 @@
 
 > Built by [Greg Greiner](https://www.linkedin.com/in/greggreiner1/), CEO of [Woven](https://woven.ai/), for [The Growth Podcast](https://www.youtube.com/@growproduct) with [Aakash Gupta](https://www.news.aakashg.com). Watch him build it and add the eval loop live in [the episode](https://youtu.be/JpyhPePe150).
 >
-> Dry run mode, the sample replies and the standalone groundedness judge were added afterward by [Aakash Gupta](https://www.news.aakashg.com) so anyone can run it without Gmail. Everything else is Greg's.
+> Dry run mode, the sample replies, the standalone groundedness judge and the permissions judge were added afterward by [Aakash Gupta](https://www.news.aakashg.com) so anyone can run it without Gmail. Everything else is Greg's.
 
 A working example of an AI agent running a real customer conversation, not just a mail merge. It sends a personalized check-in, reads each reply, decides what to do, answers within company policy, hands sensitive cases to a human, and turns all of it into a research report.
 
@@ -70,6 +70,7 @@ When you're ready for real mail, follow Setup below. The dry run uses the same c
 | Only email people who opted in | Only rows with `send=yes` in `customers.csv` are in scope |
 | Humans handle anything sensitive | Injury, anger, refund and "talk to a human" replies are always **saved as drafts** and never auto-sent, whatever `reply_mode` says |
 | Don't invent facts or discounts | Before any auto-send (outreach and replies), an independent judge (`.claude/agents/groundedness-judge.md`) checks every claim against `company/*.md`. A failed email is regenerated from scratch with the failure as input, then held as a draft for review (`evals/groundedness.md`) |
+| Don't do what you weren't allowed to | A second independent judge (`.claude/agents/permissions-judge.md`) lists every action an email takes or promises and links each one to the instruction that permits it. An offer this customer isn't eligible for, or "I've extended your trial" with no billing tool, fails (`evals/permissions.md`) |
 | Never pester | No two outbound emails in a row without a reply in between. Processed mail gets a `Cadence/Processed` label so nothing is answered twice |
 | Unsubscribe means now | The roster is updated before the confirmation goes out |
 | Least privilege | `.claude/settings.json` allowlists the exact Gmail and Slack tools and denies `rm` and `curl` |
@@ -91,11 +92,13 @@ company/
   commands/process-replies.md  /process-replies read and act on new replies
   commands/reset-gmail.md      /reset-gmail     clean the inbox between demo takes
   commands/insights-report.md  /insights-report write the research report
-  agents/groundedness-judge.md  independent judge that checks each email
+  agents/groundedness-judge.md  independent judge: is every claim true?
+  agents/permissions-judge.md   independent judge: was every action allowed?
   settings.json                Tool permissions for unattended runs
 .mcp.json                      Gmail connection (google_workspace_mcp)
 config/campaign.example.json   Mailbox, reply mode, Slack channel, dry_run
-evals/groundedness.md          The eval: rubric, judge, what happens on failure
+evals/groundedness.md          Eval 1: rubric, judge, what happens on failure
+evals/permissions.md           Eval 2: every action linked to the instruction that allows it
 sample-replies/                Four fictional customer replies for dry run
 outbox/                        Dry run output: emails, drafts, Slack posts (gitignored)
 customers.example.csv          Sample roster
@@ -145,7 +148,7 @@ You'll need Claude Code, [`uv`](https://docs.astral.sh/uv/), and a Gmail or Goog
 
 ## Known gaps (found by running it in dry run)
 
-- **The agent can promise what it can't do.** One reply told a customer "I've extended your trial by 7 days", but there is no billing tool, so nothing changed. `company/policies.md` says extensions apply instantly, so the judge passed it. Give the agent a tool for it, or have it say a teammate will apply it.
+- **The agent can promise what it can't do.** One reply told a customer "I've extended your trial by 7 days", but there is no billing tool, so nothing changed. `company/policies.md` says extensions apply instantly, so the judge passed it. The permissions judge now fails this (NOT POSSIBLE: no billing tool), so the regenerated draft says a teammate will apply it. Give the agent a billing tool if you want it to act directly.
 - **The judge is a model, so it is not perfectly consistent.** It failed "it helps us shape the program" in one email and passed a very similar "it genuinely helps us" in another. It also treats general encouragement as not a claim. For anything stricter, tighten the rubric in `evals/groundedness.md` or add a second one.
 - **The log used to keep only a one-line summary of each reply, so the insights report had no customer words to quote.** Inbound entries now carry the customer's message verbatim.
 

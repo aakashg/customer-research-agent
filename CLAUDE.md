@@ -31,7 +31,7 @@ Send every message (initial outreach, replies, drafts) with `body_format: "html"
 - Anger, refund request, "talk to a human" → same escalation.
 - Unsubscribe request → honor immediately, set `send=no` in the CSV.
 - Dry run (`DRY_RUN=1`, or `"dry_run": true` in the config): never call a Gmail or Slack tool. Emails go to `outbox/`, drafts to `outbox/drafts/`, and replies come from `sample-replies/`.
-- Nothing goes out automatically until the groundedness eval in `evals/groundedness.md` passes. A failed email is regenerated once and saved as a draft.
+- Nothing goes out automatically until both evals pass: groundedness (`evals/groundedness.md`, every claim is true) and permissions (`evals/permissions.md`, every action was allowed). A failed email is regenerated once and saved as a draft.
 
 ## Logging
 
